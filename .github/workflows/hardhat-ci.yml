@@ -102,6 +102,15 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: "pnpm"
+      # node-hid (a transitive dependency of hardhat-ledger) only ships
+      # prebuilt binaries for some Node ABIs. On the others it is compiled
+      # from source, which needs the libusb and udev headers.
+      - name: Install node-hid build dependencies
+        if: runner.os == 'Linux'
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libusb-1.0-0-dev libudev-dev
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
       - name: Build

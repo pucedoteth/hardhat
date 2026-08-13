@@ -95,24 +95,31 @@ export const sortPluginsByDownloads = (downloadsD: {
 };
 
 const getLastMonthDownloads = async (npmPackage: string): Promise<number> => {
-  const res = await request(
-    `https://api.npmjs.org/downloads/point/last-month/${npmPackage}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    }
-  );
+  try {
+    const res = await request(
+      `https://api.npmjs.org/downloads/point/last-month/${npmPackage}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
+    );
 
-  if (res.statusCode === 404) {
+    if (res.statusCode === 404) {
+      return 0;
+    }
+
+    const json = (await res.body.json()) as { downloads: number };
+
+    return json.downloads;
+  } catch {
+    // The download counts are only used to order the community plugins, so a
+    // build without access to the npm registry should still succeed. Falling
+    // back to 0 keeps the plugin in the list, just not sorted by popularity.
     return 0;
   }
-
-  const json = (await res.body.json()) as { downloads: number };
-
-  return json.downloads;
 };
 
 export const generatePluginsDownloads = async (pluginsD: typeof plugins) => {

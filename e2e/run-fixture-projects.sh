@@ -45,8 +45,20 @@ for dir in ${FIXTURE_PROJECTS_DIR}/*; do
     cd "$dir"
 
     echo "[e2e] Installing modules in $dir"
-    npm add $HARDHAT_CORE_FOLDER_PATH/$HARDHAT_TGZ_FILE >/dev/null 2>&1
-    npm install >/dev/null 2>&1 # install moduled specified in the package.json
+    # The output is hidden to keep the logs readable, but it has to be printed
+    # when a command fails, otherwise `set -e` aborts the run without saying
+    # why the install didn't work.
+    run_quietly() {
+      if ! "$@" >npm-output.log 2>&1; then
+        echo "[e2e] ERROR: \`$*\` failed in $dir"
+        cat npm-output.log
+        rm -f npm-output.log
+        exit 1
+      fi
+      rm -f npm-output.log
+    }
+    run_quietly npm add $HARDHAT_CORE_FOLDER_PATH/$HARDHAT_TGZ_FILE
+    run_quietly npm install # install modules specified in the package.json
     echo "[e2e] All modules have been installed in $dir"
 
     echo "[e2e] Starting test in $dir"
